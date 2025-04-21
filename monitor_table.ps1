@@ -191,9 +191,17 @@ try {
 
     # 3. Query New Data
     # Assuming the data table has a 'TimestampUTC' column of a suitable date/time type
-    $dataQuery = "SELECT * FROM [$($config.DataSchema)].[$($config.DataTableName)] WHERE TimestampUTC > '$($lastRunTimestampSqlFormatted)';"
-    Write-Log -Message "Executing query: $dataQuery"
-    $newData = Invoke-Sqlcmd @sqlParams -Query $dataQuery
+    # 3. Query New Data
+    Write-Log -Message "Fetching data query from config.json..."
+    $configuredDataQuery = $config.NewDataQuery
+
+    # Substitute placeholders
+    $finalDataQuery = $configuredDataQuery -replace '{{LastRunTimestampUTC}}', $lastRunTimestampSqlFormatted
+    $finalDataQuery = $finalDataQuery -replace '{{DataSchema}}', $config.DataSchema
+    $finalDataQuery = $finalDataQuery -replace '{{DataTableName}}', $config.DataTableName
+
+    Write-Log -Message "Executing query: $finalDataQuery"
+    $newData = Invoke-Sqlcmd @sqlParams -Query $finalDataQuery
 
     # 4. Process & Log New Data
     if ($newData) {
